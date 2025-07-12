@@ -1,0 +1,224 @@
+{
+  "testCases": {
+    "TC01_successfulCreditTransaction": {
+      "description": "Process Successful Credit Transaction",
+      "priority": "High",
+      "transactionData": {
+        "currency": "USD",
+        "amount": 100.50,
+        "type": "credit"
+      },
+      "expectedResponse": {
+        "properties": ["transactionId", "status", "createdAt"],
+        "statusPattern": "^(pending|finished)$",
+        "outcomePattern": "^(approved|denied)$"
+      }
+    },
+    "TC02_debitTransactionSufficientBalance": {
+      "description": "Process Debit Transaction with Sufficient Balance",
+      "priority": "High",
+      "setupTransaction": {
+        "currency": "EUR",
+        "amount": 500.00,
+        "type": "credit"
+      },
+      "mainTransaction": {
+        "currency": "EUR",
+        "amount": 100.00,
+        "type": "debit"
+      },
+      "expectedOutcome": "approved"
+    },
+    "TC03_pendingTransactionCompletion": {
+      "description": "Handle Pending Transaction Completion",
+      "priority": "High",
+      "transactionData": {
+        "currency": "CAD",
+        "amount": 250.75,
+        "type": "credit"
+      },
+      "expectedResponse": {
+        "properties": ["transactionId", "status", "updatedAt"],
+        "finalStatus": "finished",
+        "outcomePattern": "^(approved|denied)$"
+      }
+    },
+    "TC04_multiCurrencyTransactions": {
+      "description": "Multi-Currency Transaction Processing",
+      "priority": "Medium",
+      "currencies": ["USD", "EUR", "GBP"],
+      "transactionTemplate": {
+        "amount": 100.00,
+        "type": "credit"
+      },
+      "expectedWalletProperties": {
+        "currencyClips": {
+          "minLength": 1,
+          "properties": ["currency", "balance", "transactionCount"]
+        }
+      }
+    },
+    "TC05_inputValidation": {
+      "description": "Transaction Input Validation",
+      "priority": "Medium",
+      "invalidTransactions": {
+        "zeroAmount": {
+          "currency": "USD",
+          "amount": 0,
+          "type": "credit"
+        },
+        "negativeAmount": {
+          "currency": "USD",
+          "amount": -100,
+          "type": "credit"
+        },
+        "invalidCurrency": {
+          "currency": "INVALID",
+          "amount": 100,
+          "type": "credit"
+        },
+        "invalidType": {
+          "currency": "USD",
+          "amount": 100,
+          "type": "invalid"
+        },
+        "missingCurrency": {
+          "amount": 100,
+          "type": "credit"
+        },
+        "missingAmount": {
+          "currency": "USD",
+          "type": "credit"
+        },
+        "missingType": {
+          "currency": "USD",
+          "amount": 100
+        }
+      },
+      "expectedErrorStatus": {
+        "minStatus": 400
+      }
+    },
+    "TC06_balanceConsistency": {
+      "description": "Wallet Balance Consistency",
+      "priority": "High",
+      "currency": "USD",
+      "initialAmount": 1000.00,
+      "transactions": [
+        {
+          "currency": "USD",
+          "amount": 1000.00,
+          "type": "credit"
+        },
+        {
+          "currency": "USD",
+          "amount": 100.00,
+          "type": "debit"
+        },
+        {
+          "currency": "USD",
+          "amount": 50.00,
+          "type": "credit"
+        },
+        {
+          "currency": "USD",
+          "amount": 200.00,
+          "type": "debit"
+        }
+      ],
+      "balanceValidation": {
+        "tolerance": 0.0001,
+        "minBalance": 0
+      }
+    },
+    "TC07_transactionHistory": {
+      "description": "Transaction History Retrieval",
+      "priority": "Medium",
+      "testTransaction": {
+        "currency": "GBP",
+        "amount": 75.25,
+        "type": "credit"
+      },
+      "paginationTest": {
+        "page": 1
+      },
+      "expectedHistoryProperties": {
+        "properties": ["transactions", "totalCount", "currentPage", "totalPages"],
+        "transactionsType": "array"
+      },
+      "dateFilterTest": {
+        "useCurrentDate": true,
+        "timeRange": "today"
+      }
+    },
+    "TC08_errorHandling": {
+      "description": "Error Handling for Non-existent Resources",
+      "priority": "Medium",
+      "expectedErrorStatus": {
+        "minStatus": 400
+      },
+      "testScenarios": {
+        "nonExistentWallet": {
+          "generateUUID": true,
+          "endpoint": "wallet"
+        },
+        "nonExistentTransaction": {
+          "generateUUID": true,
+          "endpoint": "transaction"
+        }
+      }
+    }
+  },
+  "commonTestData": {
+    "currencies": {
+      "supported": ["USD", "EUR", "GBP", "CAD", "JPY"],
+      "unsupported": ["INVALID", "XXX", "123"]
+    },
+    "transactionTypes": {
+      "valid": ["credit", "debit"],
+      "invalid": ["invalid", "transfer", "withdraw"]
+    },
+    "amounts": {
+      "valid": {
+        "small": 0.01,
+        "medium": 100.00,
+        "large": 10000.00
+      },
+      "invalid": {
+        "zero": 0,
+        "negative": -100,
+        "tooLarge": 999999999
+      }
+    },
+    "apiEndpoints": {
+      "processTransaction": "/wallet/{walletId}/transaction",
+      "getTransaction": "/wallet/{walletId}/transaction/{transactionId}",
+      "getWallet": "/wallet/{walletId}",
+      "getTransactions": "/wallet/{walletId}/transactions"
+    },
+    "responseValidation": {
+      "uuidPattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "isoDatePattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+      "statusCodes": {
+        "success": [200, 201, 202],
+        "clientError": [400, 401, 403, 404],
+        "serverError": [500, 502, 503]
+      }
+    }
+  },
+  "testConfiguration": {
+    "timeouts": {
+      "transactionCompletion": 30000,
+      "apiResponse": 10000,
+      "authentication": 5000
+    },
+    "retryConfig": {
+      "maxRetries": 3,
+      "retryDelay": 1000
+    },
+    "defaultHeaders": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    }
+  }
+}

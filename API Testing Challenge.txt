@@ -1,0 +1,20 @@
+Challenge: API Testing Suite
+
+Consider the hypothetical REST API in the provided specification, designed for handling wallet transactions in various currencies. Your challenge is to implement a test plan, using your preferred JavaScript or Python testing framework, that covers essential aspects of the API functionality.
+
+Deliverables:
+Your test automation code.
+A README file covering setup, dependencies, execution, and any additional notes.
+A TESTPLAN file that covers the implemented test cases (5 to 10 test cases) and crucial unimplemented test cases (no more than 5), prioritized by importance.
+
+Requirements:
+- Diverse Testing: Your tests should span various scenarios. Steer clear of repetitive or overly simple tests. Aim to implement between 5 to 10 tests. 
+- Execution Readiness: Design your code to run directly from the command line on a standard OS setup, requiring only the dependencies you've listed. Include setup instructions in the README.
+- Service Interaction: Craft your tests as if they're interacting with an actual, live API. Avoid using pseudocode, and make sure each test includes meaningful validations or assertions.
+- Focus on Wallet Transactions: Concentrate your testing efforts on the wallet transaction processing (mainly `POST /wallet/{walletId}/transaction`). Assume the authentication APIs are working correctly, providing valid and trusted outputs.
+- Comment assumptions: Feel free to assume any behavior or flow that doesn't contradict the spec. Take note of your assumptions in comments as this helps later on when reviewing and discussing the code. 
+- Avoid hardcoding test data, consider the maintainability of yor test suite and apply a consistent coding style. 
+- LLM Disclosure: There is no restriction on LLM or code generation tools. When utilizing such technologies, kindly note the specific version or model used (akin to declaring dependencies in a project). Regardless of full or shared authorship we will assume all the code and associated documentation is vetted by you. Prompt engineering is a complementary skill that you may wish to highlight.
+
+Note:
+The API specification is presented in an OpenAPI format. To access the documentation, open WalletApiSpec\index.html.
