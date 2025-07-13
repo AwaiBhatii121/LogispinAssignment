@@ -1,10 +1,4 @@
-// ***********************************************
-// Custom Commands for Wallet API Testing
-// ***********************************************
-
-/**
- * Generic HTTP Request Handler
- */
+// WalletApiSpec/cypress/support/commands.js
 Cypress.Commands.add('sendRequest', ({
   url,
   method = 'GET',

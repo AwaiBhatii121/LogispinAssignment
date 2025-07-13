@@ -1,10 +1,3 @@
-// ***********************************************
-// Test Helper Functions for Wallet API Testing
-// ***********************************************
-
-/**
- * Validation Helpers
- */
 export const ValidationHelpers = {
   /**
    * Validates UUID format
@@ -109,61 +102,46 @@ export const DateHelpers = {
    */
   getEndOfToday() {
     const today = new Date();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
     return endOfDay.toISOString();
   },
 
   /**
-   * Gets date range for testing
-   * @param {number} daysAgo - Number of days ago to start from
-   * @param {number} daysFromNow - Number of days from now to end at
+   * Gets date range for today
    * @returns {Object} - Object with startDate and endDate
    */
-  getDateRange(daysAgo = 7, daysFromNow = 0) {
-    const now = new Date();
-    const startDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-    const endDate = new Date(now.getTime() + (daysFromNow * 24 * 60 * 60 * 1000));
-    
+  getTodayDateRange() {
     return {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
+      startDate: this.getStartOfToday(),
+      endDate: this.getEndOfToday()
     };
   }
 };
 
 /**
- * Balance Calculation Helpers
+ * API Helpers
  */
-export const BalanceHelpers = {
+export const ApiHelpers = {
   /**
    * Calculates expected balance after transactions
-   * @param {number} initialBalance - Starting balance
-   * @param {Array} transactions - Array of completed transactions
-   * @returns {number} - Expected final balance
+   * @param {number} initialBalance - Initial wallet balance
+   * @param {Array} completedTransactions - Array of completed transactions
+   * @returns {number} - Expected balance
    */
-  calculateExpectedBalance(initialBalance, transactions) {
-    return transactions.reduce((balance, transaction) => {
+  calculateExpectedBalance(initialBalance, completedTransactions) {
+    let expectedBalance = initialBalance;
+    
+    completedTransactions.forEach(transaction => {
       if (transaction.outcome === 'approved') {
         if (transaction.type === 'credit') {
-          return balance + transaction.amount;
+          expectedBalance += transaction.amount;
         } else if (transaction.type === 'debit') {
-          return balance - transaction.amount;
+          expectedBalance -= transaction.amount;
         }
       }
-      return balance;
-    }, initialBalance);
-  },
-
-  /**
-   * Validates balance is within acceptable range
-   * @param {number} actualBalance - Actual balance
-   * @param {number} expectedBalance - Expected balance
-   * @param {number} tolerance - Acceptable tolerance
-   * @returns {boolean} - True if balance is within range
-   */
-  isBalanceWithinTolerance(actualBalance, expectedBalance, tolerance = 0.01) {
-    const difference = Math.abs(actualBalance - expectedBalance);
-    return difference <= tolerance;
+    });
+    
+    return expectedBalance;
   }
 };
 
@@ -241,7 +219,7 @@ export const TestHelpers = {
   validation: ValidationHelpers,
   dataGen: DataGenerators,
   dates: DateHelpers,
-  balance: BalanceHelpers,
+  api: ApiHelpers,
   response: ResponseHelpers,
   config: ConfigHelpers
 };
