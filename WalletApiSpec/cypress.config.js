@@ -9,7 +9,7 @@ module.exports = defineConfig({
   fixturesFolder: "cypress/fixtures",
   
   env: {
-    API_BASE_URL: "https://api.wallet.example.com",
+    API_BASE_URL: "https://challenge.test.local/challenge/api/v1",
     TEST_USERNAME: "test@example.com",
     TEST_PASSWORD: "testPassword123"
   },
