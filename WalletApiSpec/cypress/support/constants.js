@@ -12,8 +12,10 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: (userId) => `${Cypress.env('API_BASE_URL')}/user/info/${userId}`
   },
   
-  WALLET: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}`,
-  WALLET_TRANSACTION: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transaction`,
-  TRANSACTION_DETAIL: (walletId, transactionId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transaction/${transactionId}`,
-  WALLET_TRANSACTIONS: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transactions`
+  WALLET: {
+    GET_WALLET: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}`,
+    PROCESS_TRANSACTION: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transaction`,
+    GET_TRANSACTION: (walletId, transactionId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transaction/${transactionId}`,
+    GET_ALL_TRANSACTIONS: (walletId) => `${Cypress.env('API_BASE_URL')}/wallet/${walletId}/transactions`
+  }
 };

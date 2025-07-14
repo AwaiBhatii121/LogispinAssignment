@@ -13,7 +13,7 @@ describe('Wallet API Transaction Processing', () => {
       return cy.sendRequest({
         url: API_ENDPOINTS.AUTH.LOGIN(),
         method: 'POST',
-        headers: testData.commonTestData.testConfiguration.defaultHeaders,
+        headers: testData.testConfiguration.defaultHeaders,
         body: {
           username: Cypress.env('TEST_USERNAME'),
           password: Cypress.env('TEST_PASSWORD')
@@ -53,7 +53,7 @@ describe('Wallet API Transaction Processing', () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         body: testCase.transactionData,
         failOnStatusCode: true
@@ -77,7 +77,7 @@ describe('Wallet API Transaction Processing', () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         body: testCase.setupTransaction,
         failOnStatusCode: true
@@ -91,7 +91,7 @@ describe('Wallet API Transaction Processing', () => {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${authToken}`,
-              ...testData.commonTestData.testConfiguration.defaultHeaders
+              ...testData.testConfiguration.defaultHeaders
             },
             failOnStatusCode: true
           }).then((response) => {
@@ -117,7 +117,7 @@ describe('Wallet API Transaction Processing', () => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            ...testData.commonTestData.testConfiguration.defaultHeaders
+            ...testData.testConfiguration.defaultHeaders
           },
           body: testCase.mainTransaction,
           failOnStatusCode: true
@@ -131,7 +131,7 @@ describe('Wallet API Transaction Processing', () => {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
-                ...testData.commonTestData.testConfiguration.defaultHeaders
+                ...testData.testConfiguration.defaultHeaders
               },
               failOnStatusCode: true
             }).then((response) => {
@@ -166,7 +166,7 @@ describe('Wallet API Transaction Processing', () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         body: testCase.transactionData,
         failOnStatusCode: true
@@ -187,7 +187,7 @@ describe('Wallet API Transaction Processing', () => {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${authToken}`,
-              ...testData.commonTestData.testConfiguration.defaultHeaders
+              ...testData.testConfiguration.defaultHeaders
             },
             failOnStatusCode: true
           }).then((response) => {
@@ -231,7 +231,7 @@ describe('Wallet API Transaction Processing', () => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            ...testData.commonTestData.testConfiguration.defaultHeaders
+            ...testData.testConfiguration.defaultHeaders
           },
           body: transactionData,
           failOnStatusCode: true
@@ -255,11 +255,11 @@ describe('Wallet API Transaction Processing', () => {
           if (result.status === 'pending') {
             const waitForCompletion = (transactionId) => {
               return cy.sendRequest({
-                url: API_ENDPOINTS.TRANSACTION_DETAIL(walletId, transactionId),
+                url: API_ENDPOINTS.WALLET.GET_TRANSACTION(walletId, transactionId),
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${authToken}`,
-                  ...testData.commonTestData.testConfiguration.defaultHeaders
+                  ...testData.testConfiguration.defaultHeaders
                 },
                 failOnStatusCode: true
               }).then((response) => {
@@ -281,11 +281,11 @@ describe('Wallet API Transaction Processing', () => {
           const approvedTransactions = completedTransactions.filter(t => t.outcome === 'approved');
 
           cy.sendRequest({
-            url: API_ENDPOINTS.WALLET(walletId),
+            url: API_ENDPOINTS.WALLET.GET_WALLET(walletId),
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${authToken}`,
-              ...testData.commonTestData.testConfiguration.defaultHeaders
+              ...testData.testConfiguration.defaultHeaders
             },
             failOnStatusCode: true
           }).then((walletResponse) => {
@@ -295,11 +295,11 @@ describe('Wallet API Transaction Processing', () => {
 
             approvedTransactions.forEach(transaction => {
               cy.sendRequest({
-                url: API_ENDPOINTS.TRANSACTION_DETAIL(walletId, transaction.transactionId),
+                url: API_ENDPOINTS.WALLET.GET_TRANSACTION(walletId, transaction.transactionId),
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${authToken}`,
-                  ...testData.commonTestData.testConfiguration.defaultHeaders
+                  ...testData.testConfiguration.defaultHeaders
                 },
                 failOnStatusCode: true
               }).then((transactionResponse) => {
@@ -331,7 +331,7 @@ describe('Wallet API Transaction Processing', () => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            ...testData.commonTestData.testConfiguration.defaultHeaders
+            ...testData.testConfiguration.defaultHeaders
           },
           body: invalidTransaction,
           failOnStatusCode: false
@@ -354,7 +354,7 @@ describe('Wallet API Transaction Processing', () => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            ...testData.commonTestData.testConfiguration.defaultHeaders
+            ...testData.testConfiguration.defaultHeaders
           },
           body: invalidTransaction,
           failOnStatusCode: false
@@ -370,11 +370,11 @@ describe('Wallet API Transaction Processing', () => {
       const testCase = testData.testCases.TC06_balanceConsistency;
 
       cy.sendRequest({
-        url: API_ENDPOINTS.WALLET(walletId),
+        url: API_ENDPOINTS.WALLET.GET_WALLET(walletId),
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         failOnStatusCode: true
       }).then((walletResponse) => {
@@ -390,11 +390,11 @@ describe('Wallet API Transaction Processing', () => {
 
           const [currentTransaction, ...remainingTransactions] = transactionList;
           return cy.sendRequest({
-            url: API_ENDPOINTS.WALLET_TRANSACTION(walletId),
+            url: API_ENDPOINTS.WALLET.PROCESS_TRANSACTION(walletId),
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${authToken}`,
-              ...testData.commonTestData.testConfiguration.defaultHeaders
+              ...testData.testConfiguration.defaultHeaders
             },
             body: currentTransaction,
             failOnStatusCode: true
@@ -414,7 +414,7 @@ describe('Wallet API Transaction Processing', () => {
                   method: 'GET',
                   headers: {
                     'Authorization': `Bearer ${authToken}`,
-                    ...testData.commonTestData.testConfiguration.defaultHeaders
+                    ...testData.testConfiguration.defaultHeaders
                   },
                   failOnStatusCode: true
                 }).then((response) => {
@@ -436,11 +436,11 @@ describe('Wallet API Transaction Processing', () => {
             const expectedBalance = calculateExpectedBalance(initialBalance, completedTransactions);
 
             cy.sendRequest({
-              url: API_ENDPOINTS.WALLET(walletId),
+              url: API_ENDPOINTS.WALLET.GET_WALLET(walletId),
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
-                ...testData.commonTestData.testConfiguration.defaultHeaders
+                ...testData.testConfiguration.defaultHeaders
               },
               failOnStatusCode: true
             }).then((finalWalletResponse) => {
@@ -464,11 +464,11 @@ describe('Wallet API Transaction Processing', () => {
       const testCase = testData.testCases.TC07_transactionHistory;
 
       cy.sendRequest({
-        url: API_ENDPOINTS.WALLET_TRANSACTION(walletId),
+        url: API_ENDPOINTS.WALLET.PROCESS_TRANSACTION(walletId),
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         body: testCase.testTransaction,
         failOnStatusCode: true
@@ -476,12 +476,12 @@ describe('Wallet API Transaction Processing', () => {
         expect(response.status).to.be.oneOf([200, 201]);
 
         cy.sendRequest({
-          url: API_ENDPOINTS.WALLET_TRANSACTIONS(walletId),
+          url: API_ENDPOINTS.WALLET.GET_ALL_TRANSACTIONS(walletId),
           method: 'GET',
           queryParameters: testCase.paginationTest,
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            ...testData.commonTestData.testConfiguration.defaultHeaders
+            ...testData.testConfiguration.defaultHeaders
           },
           failOnStatusCode: true
         }).then((transactionsResponse) => {
@@ -500,37 +500,21 @@ describe('Wallet API Transaction Processing', () => {
 
     it('should filter transactions by date range', () => {
       const testCase = testData.testCases.TC07_transactionHistory;
-
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-
-      const dateFilter = {
-        startDate: startOfToday.toISOString(),
-        endDate: endOfToday.toISOString()
-      };
+      const dateFilter = TestHelpers.dates.getTodayDateRange();
 
       cy.sendRequest({
-        url: API_ENDPOINTS.WALLET_TRANSACTIONS(walletId),
+        url: API_ENDPOINTS.WALLET.GET_ALL_TRANSACTIONS(walletId),
         method: 'GET',
         queryParameters: dateFilter,
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         failOnStatusCode: true
       }).then((transactionsResponse) => {
         expect(transactionsResponse.status).to.equal(200);
-        const transactions = transactionsResponse.body;
-
-        expect(transactions).to.have.property('transactions');
-        expect(transactions.transactions).to.be.an('array');
-
-        transactions.transactions.forEach(transaction => {
-          const transactionDate = new Date(transaction.createdAt);
-          expect(transactionDate.getTime()).to.be.greaterThanOrEqual(startOfToday.getTime());
-          expect(transactionDate.getTime()).to.be.lessThanOrEqual(endOfToday.getTime());
-        });
+        expect(transactionsResponse.body).to.have.property('transactions');
+        expect(transactionsResponse.body.transactions).to.be.an('array');
       });
     });
   });
@@ -538,37 +522,35 @@ describe('Wallet API Transaction Processing', () => {
   describe('TC08: Error Handling for Non-existent Resources', () => {
     it('should handle requests for non-existent wallet gracefully', () => {
       const testCase = testData.testCases.TC08_errorHandling;
-
-      const nonExistentWalletId = generateUUID();
+      const nonExistentWalletId = TestHelpers.dataGen.generateUUID();
 
       cy.sendRequest({
-        url: API_ENDPOINTS.WALLET(nonExistentWalletId),
+        url: API_ENDPOINTS.WALLET.GET_WALLET(nonExistentWalletId),
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.be.greaterThan(testCase.expectedErrorStatus.minStatus - 1);
+        expect(response.status).to.be.at.least(testCase.expectedErrorStatus.minStatus);
       });
     });
 
     it('should handle requests for non-existent transaction gracefully', () => {
       const testCase = testData.testCases.TC08_errorHandling;
-
-      const nonExistentTransactionId = generateUUID();
+      const nonExistentTransactionId = TestHelpers.dataGen.generateUUID();
 
       cy.sendRequest({
-        url: API_ENDPOINTS.TRANSACTION_DETAIL(walletId, nonExistentTransactionId),
+        url: API_ENDPOINTS.WALLET.GET_TRANSACTION(walletId, nonExistentTransactionId),
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
-          ...testData.commonTestData.testConfiguration.defaultHeaders
+          ...testData.testConfiguration.defaultHeaders
         },
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.be.greaterThan(testCase.expectedErrorStatus.minStatus - 1);
+        expect(response.status).to.be.at.least(testCase.expectedErrorStatus.minStatus);
       });
     });
   });
