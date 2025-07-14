@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Swagger UI</title>
+  <link rel="stylesheet" href="swagger-ui.css" />
+</head>
+
+<script type="application/json" id="swagger-spec">
+  {
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Wallet API - Challenge target",
+        "description": "This is a fictional definition for a Wallet REST API.  \n\nThe Wallet API facilitates the management of digital wallets, allowing for operations such as managing funds in multiple currencies, checking balances, and reviewing transaction history. Designed for testing purposes.  \n  \nAll requests to the wallet api need to be authenticated with a Bearer token.  \nThe Bearer token is obtained by logging in with username and password on the `/user/login` endpoint.   \nRequests to the login endpoint must contain the `X-Service-Id`header.  \n\nA user only has one wallet. A wallet contains mutliple currencyClips. Think of these as multiple pockets with different amounts of currency tokens. The balance can never be negative. All currency of the same type goes in the same pocket.    \n\nA user's wallet is initially empty. currencyClips are created when doing a positive balance transaction in a new currency.   \n_Example:_\n\n- Empty Wallet Response:\n\n  ```json\n  {\n    \"walletId\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"currencyClips\": [],\n    \"createdAt\": \"2024-11-01T00:00:00Z\",\n    \"updatedAt\": \"2024-11-01T00:00:00Z\"\n  }\n  ```\n\n- `POST /wallet/{walletId}/transaction` -> Add EUR to the wallet\n\n- Wallet after first time transaction\n\n  ```json\n  {\n    \"walletId\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"currencyClips\": [\n      {\n        \"currency\": \"EUR\",\n        \"balance\": 100.50,\n        \"lastTransaction\": \"2024-11-04T12:34:56Z\",\n        \"transactionCount\": 1\n      }\n    ],\n    \"createdAt\": \"2024-11-01T00:00:00Z\",\n    \"updatedAt\": \"2024-11-04T12:34:56Z\"\n  }\n  ```\nBalance is changed by doing `debit` and `credit` transactions. \n\n**Transaction Processing:**\n  - **Behind the Scenes**: The Wallet API makes calls to third party services in order to aprove or deny transactions. If you want to add funds to your wallet from your bank account, it needs to ask the bank first. Responses from third party services may be slow. \n  - **Immediate Response**: If the external service responds within **1 second**, the Wallet service can process the transaction immediately and will return a status of \"finished\" with an outcome of \"approved\" or \"denied\".  \n  _Example:_\n    ```json\n    {\n      \"transactionId\": \"123e4567-e89b-12d3-a456-426614174000\",\n      \"currency\": \"EUR\",\n      \"amount\": 100.50,\n      \"type\": \"credit\",\n      \"status\": \"finished\",\n      \"outcome\": \"approved\",\n      \"createdAt\": \"2024-11-15T05:30:00Z\",\n      \"updatedAt\": \"2024-11-15T05:45:00Z\"\n    }\n    ```\n  - **Delayed Response**: If the external service takes longer than 1 second, the initial status will be \"pending\".\n  \n    ```json\n    {\n      \"transactionId\": \"123e4567-e89b-12d3-a456-426614174000\",\n      \"status\": \"pending\",\n      \"createdAt\": \"2024-11-15T05:30:00Z\",\n    }\n    ```\n\n  - **Transaction Update**: In cases when the initial status is \"pending\", the transaction status will be updated to \"finished\" when:\n    - The external service responds, providing an outcome of \"approved\" or \"denied\", **or**\n    - 30 minutes have passed since the transaction was initiated, in which case the transaction is automatically rejected.\n    \n    **Example Response After External Service Reply:**\n    ```json\n    {\n      \"transactionId\": \"123e4567-e89b-12d3-a456-426614174000\",\n      \"currency\": \"EUR\",\n      \"amount\": 100.50,\n      \"type\": \"credit\",\n      \"status\": \"finished\",\n      \"outcome\": \"approved\",\n      \"createdAt\": \"2024-11-15T05:30:00Z\",\n      \"updatedAt\": \"2024-11-15T05:35:00Z\"\n    }\n    ```\n    \n    **Example Response After 30 Minutes Timeout:**\n    ```json\n    {\n      \"transactionId\": \"123e4567-e89b-12d3-a456-426614174000\",\n      \"currency\": \"EUR\",\n      \"amount\": 100.50,\n      \"type\": \"credit\",\n      \"status\": \"finished\",\n      \"outcome\": \"denied\",\n      \"createdAt\": \"2024-11-15T05:30:00Z\",\n      \"updatedAt\": \"2024-11-15T06:00:00Z\",\n    }\n    ```\n",
+        "version": "1.0.0"
+    },
+    "tags": [
+        {
+            "name": "user",
+            "description": "Operations concerning user authentication and information retrieval.  \n"
+        },
+        {
+            "name": "wallet",
+            "description": "Operations related to wallet management. This includes creating transactions, checking balances, and retrieving transaction history for different currencies within a user's wallet."
+        }
+    ],
+    "servers": [
+        {
+            "url": "https://challenge.test.local/challenge/api/v1"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            },
+            "serviceIdHeader": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Service-Id"
+            }
+        },
+        "schemas": {
+            "UserTokenResponse": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "description": "User-specific access token (JWT)",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "Token to refresh user's access token (JWT)",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwic2NvcGUiOiJyZWZyZXNoIiwiaWF0IjoxNTE2MjM5MDIyfQ.TZg262l54FnzFuSzi8F5J3W9s61iS0L681WnTJ0k8k0"
+                    },
+                    "expiry": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-01T01:00:00Z",
+                        "description": "Expiration time of the access token, 1 hour from now"
+                    },
+                    "userId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "description": "ID of the authenticated user"
+                    }
+                }
+            },
+            "UserInfo": {
+                "type": "object",
+                "properties": {
+                    "walletId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "A GUID representing the user's wallet"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe",
+                        "description": "The user's full name"
+                    },
+                    "locale": {
+                        "type": "string",
+                        "example": "en-US",
+                        "description": "The user's preferred locale"
+                    },
+                    "region": {
+                        "type": "string",
+                        "example": "AT",
+                        "description": "The user's country or region code"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "example": "Europe/Vienna",
+                        "description": "The user's timezone"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com",
+                        "description": "The user's email address"
+                    }
+                },
+                "required": [
+                    "walletId",
+                    "email"
+                ]
+            },
+            "Wallet": {
+                "type": "object",
+                "properties": {
+                    "walletId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique identifier for the wallet"
+                    },
+                    "currencyClips": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CurrencyClip"
+                        },
+                        "example": [
+                            {
+                                "currency": "EUR",
+                                "balance": 100.5015,
+                                "lastTransaction": "2024-11-01T12:34:56Z",
+                                "transactionCount": 5
+                            },
+                            {
+                                "currency": "USD",
+                                "balance": 150.25,
+                                "lastTransaction": "2024-11-01T08:23:12Z",
+                                "transactionCount": 2
+                            }
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-01T00:00:00Z",
+                        "description": "Creation timestamp of the wallet"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-01T00:00:00Z",
+                        "description": "Last update timestamp of the wallet"
+                    }
+                }
+            },
+            "CurrencyClip": {
+                "type": "object",
+                "properties": {
+                    "currency": {
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "balance": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100.5015,
+                        "description": "Balance with up to 4 decimal points"
+                    },
+                    "lastTransaction": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-01T12:34:56Z"
+                    },
+                    "transactionCount": {
+                        "type": "integer",
+                        "example": 5
+                    }
+                }
+            },
+            "Transaction": {
+                "type": "object",
+                "properties": {
+                    "transactionId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "credit",
+                            "debit"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "finished"
+                        ],
+                        "description": "- **pending**: The transaction is being processed. Its outcome is not yet determined. Check this transaction again later.\n- **finished**: The transaction has been processed. The `outcome` field will indicate whether it was 'approved' or 'denied'.\n"
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "enum": [
+                            "approved",
+                            "denied"
+                        ],
+                        "description": "Only applicable when `status` is 'finished'. Indicates if the transaction was approved or denied."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "TransactionRequest": {
+                "type": "object",
+                "properties": {
+                    "currency": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "credit",
+                            "debit"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/user/login": {
+            "post": {
+                "summary": "Authenticate a user and retrieve an access token. This endpoint requires the X-Service-Id header for identification purposes. Upon successful authentication, a JWT token is returned which is valid for one hour.",
+                "tags": [
+                    "user"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User token issued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserTokenResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "serviceIdHeader": []
+                    }
+                ]
+            }
+        },
+        "/user/info/{userId}": {
+            "get": {
+                "summary": "Retrieve user information for a specific userId.",
+                "tags": [
+                    "user"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "userId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User info retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserInfo"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required"
+                    }
+                }
+            }
+        },
+        "/wallet/{walletId}": {
+            "get": {
+                "summary": "Retrieve wallet information",
+                "tags": [
+                    "wallet"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "walletId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wallet information retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Wallet"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/{walletId}/transaction": {
+            "post": {
+                "summary": "Process a transaction for a wallet",
+                "tags": [
+                    "wallet"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "walletId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TransactionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction processed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "transactionId": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "finished"
+                                        },
+                                        "outcome": {
+                                            "type": "string",
+                                            "example": "approved"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-11-15T05:30:00Z"
+                                        },
+                                        "updatedAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-11-15T05:30:00Z"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wallet/{walletId}/transaction/{transactionId}": {
+            "get": {
+                "summary": "Retrieve details of a specific transaction",
+                "tags": [
+                    "wallet"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "walletId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "transactionId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction details retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Transaction"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/{walletId}/transactions": {
+            "get": {
+                "summary": "Retrieve all transactions with pagination and date limits",
+                "tags": [
+                    "wallet"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "walletId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "startDate",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-11-01T00:00:00Z"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "endDate",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-11-30T23:59:59Z"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction list retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "transactions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Transaction"
+                                            }
+                                        },
+                                        "totalCount": {
+                                            "type": "integer",
+                                            "description": "Total number of transactions matching the criteria"
+                                        },
+                                        "currentPage": {
+                                            "type": "integer",
+                                            "description": "Current page number"
+                                        },
+                                        "totalPages": {
+                                            "type": "integer",
+                                            "description": "Total number of pages"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</script>
+
+<body>
+  <div id="swagger-ui"></div>
+  <script src="swagger-ui-bundle.js"></script>
+  <script src="swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function () {
+      const spec = document.getElementById('swagger-spec').textContent;
+      const ui = SwaggerUIBundle({
+        spec: JSON.parse(spec),
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout"
+      })
+      window.ui = ui
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "wallet-api-tests",
+  "version": "1.0.0",
+  "description": "AQA Challenge: Cypress API Test Suite for Wallet API",
+  "main": "index.js",
+  "scripts": {
+    "test": "cypress run",
+    "test:headless": "cypress run --headless",
+    "open": "cypress open",
+    "report:latest": "node scripts/open-latest-report.js",
+    "clean": "rm -rf cypress/reports cypress/screenshots cypress/videos node_modules/.cache"
+  },
+  "keywords": [
+    "cypress",
+    "api-testing",
+    "wallet",
+    "testing",
+    "AQA"
+  ],
+  "author": "Awais",
+  "license": "MIT",
+  "devDependencies": {
+    "cypress": "^13.6.0",
+    "cypress-mochawesome-reporter": "^3.7.0",
+    "mochawesome": "^7.1.3",
+    "mochawesome-merge": "^4.3.0",
+    "mochawesome-report-generator": "^6.2.0",
+    "open": "^8.4.0"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}
